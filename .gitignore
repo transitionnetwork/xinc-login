@@ -1,0 +1,13 @@
+# ignore all files starting with .
+.*
+
+# track this file .gitignore (i.e. do NOT ignore it)
+!.gitignore
+!.gitkeep
+!.travis.yml
+!.gitattributes
+!.eslintrc.yml
+!.stylelintrc.yml
+!.npmrc
+!.hound.yml
+!.bitbucket-pipelines.yml

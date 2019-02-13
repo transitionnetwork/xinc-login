@@ -42,6 +42,12 @@
           <input type="text" name="email" id="email" value="<?php echo $form_data['email'] ?? ''; ?>">
       </p>
 
+      <?php if ($attributes['recaptcha_site_key']) : ?>
+        <div class="recaptcha-container">
+          <div class="g-recaptcha" data-sitekey="<?php echo $attributes['recaptcha_site_key']; ?>"></div>
+        </div>
+      <?php endif; ?>
+
       <p class="signup-submit">
         <input type="submit" name="submit" class="register-button" value="<?php _e('Register', 'xinc-login'); ?>"/>
       </p>

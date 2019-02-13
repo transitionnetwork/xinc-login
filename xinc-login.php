@@ -32,6 +32,7 @@ class Xinc_Login_Plugin
     add_shortcode('custom-register-form', array($this, 'render_register_form'));
     add_action('login_form_register', array($this, 'redirect_to_custom_register'));
     add_action('login_form_register', array($this, 'do_register_user'));
+    add_action('wp_print_footer_scripts', array($this, 'add_captcha_js_to_footer'));
 
     //Password Reset
     add_shortcode('custom-password-lost-form', array($this, 'render_password_lost_form'));
@@ -319,6 +320,8 @@ class Xinc_Login_Plugin
       $attributes['form-data'] = $_REQUEST['form-data'];
     }
 
+    $attributes['recaptcha_site_key'] = '6LcKSJEUAAAAADTyhp_Y3-cwR3m7HiQXJvdO6B52';
+
     // Check if the user just registered
     $attributes['registered'] = isset($_REQUEST['registered']);
 
@@ -401,6 +404,9 @@ class Xinc_Login_Plugin
       if (!get_option('users_can_register')) {
             // Registration closed, display error
         $redirect_url = add_query_arg('register-errors', 'closed', $redirect_url);
+      } elseif (!$this->verify_recaptcha()) {
+        // Recaptcha check failed, display error
+        $redirect_url = add_query_arg('register-errors', 'captcha', $redirect_url);
       } else {
         $email = $_POST['email'];
         $first_name = sanitize_text_field($_POST['first_name']);
@@ -427,6 +433,41 @@ class Xinc_Login_Plugin
       wp_redirect($redirect_url);
       exit;
     }
+  }
+
+  /**
+   * Checks that the reCAPTCHA parameter sent with the registration
+   * request is valid.
+   *
+   * @return bool True if the CAPTCHA is OK, otherwise false.
+   */
+  private function verify_recaptcha()
+  {
+    // This field is set by the recaptcha widget if check is successful
+    if (isset($_POST['g-recaptcha-response'])) {
+      $captcha_response = $_POST['g-recaptcha-response'];
+    } else {
+      return false;
+    }
+ 
+    // Verify the captcha response from Google
+    $response = wp_remote_post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      array(
+        'body' => array(
+          'secret' => '6LcKSJEUAAAAAGTQuRJ7JZNnvVe_nLLAQJ8YUBU4',
+          'response' => $captcha_response
+        )
+      )
+    );
+
+    $success = false;
+    if ($response && is_array($response)) {
+      $decoded_response = json_decode($response['body']);
+      $success = $decoded_response->success;
+    }
+
+    return $success;
   }
 
   /**
@@ -812,7 +853,10 @@ class Xinc_Login_Plugin
 
       // Password reset
       case 'empty_username':
-        return __('Please enter your email');
+        return __('Please enter your email', 'xinc-login');
+
+      case 'captcha':
+        return __('Please complete the reCaptcha', 'xinc-login');
 
       default:
         break;
@@ -831,6 +875,15 @@ class Xinc_Login_Plugin
     }
 
     return __('An unknown error occurred. Please try again later.', 'xinc-login');
+  }
+
+  /**
+   * An action function used to include the reCAPTCHA JavaScript file
+   * at the end of the page.
+   */
+  public function add_captcha_js_to_footer()
+  {
+    echo "<script src='https://www.google.com/recaptcha/api.js'></script>";
   }
 
   /**

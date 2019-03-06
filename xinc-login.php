@@ -251,8 +251,12 @@ class Xinc_Login_Plugin
         $redirect_url = $requested_redirect_to;
       }
     } else {
+      if(get_user_meta($user->ID, 'gdpr_accepted')) {
         // Non-admin users always go to their account page after login
-      $redirect_url = home_url();
+        $redirect_url = home_url('account');
+      } else {
+        $redirect_url = home_url('gdpr-terms-and-conditions');
+      }
     }
 
     return wp_validate_redirect($redirect_url, home_url());

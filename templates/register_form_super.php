@@ -15,7 +15,7 @@
     <div class="alert alert-info">
       <?php
       printf(
-        __('<p>Registration successful for %s.</p><p>The user will receive their login information in their email inbox. You may now <a href="%s">assign an initiative</a> to this user.</p>', 'xinc-login'), $attributes['registered'], home_url()
+        __('<p>Registration successful for %s.</p><p>The user will receive their login information in their email inbox. You may now <a href="%s">assign a group</a> to this user.</p>', 'xinc-login'), $attributes['registered'], home_url()
       );
       ?>
     </div>

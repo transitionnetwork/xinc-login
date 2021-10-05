@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       CDS Xinc Login
  * Description:       A plugin that replaces the WordPress login flow with a custom page.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Author:            Mark Benewith
  * License:           GPL-2.0+
  * Text Domain:       xinc-login
@@ -33,6 +33,12 @@ class Xinc_Login_Plugin
     add_action('login_form_register', array($this, 'redirect_to_custom_register'));
     add_action('login_form_register', array($this, 'do_register_user'));
     add_action('wp_print_footer_scripts', array($this, 'add_captcha_js_to_footer'));
+
+    //Registration Super
+    add_shortcode('custom-register-form-super', array($this, 'render_register_form_super'));
+    add_action('login_form_register', array($this, 'redirect_to_custom_register'));
+    add_action('login_form_register', array($this, 'do_register_user'));
+    // add_action('wp_print_footer_scripts', array($this, 'add_captcha_js_to_footer'));
 
     //Password Reset
     add_shortcode('custom-password-lost-form', array($this, 'render_password_lost_form'));
@@ -340,6 +346,46 @@ class Xinc_Login_Plugin
   }
 
   /**
+   * A shortcode for rendering the new super user registration form.
+   *
+   * @param  array   $attributes  Shortcode attributes.
+   * @param  string  $content     The text content for shortcode. Not used.
+   *
+   * @return string  The shortcode output
+   */
+  public function render_register_form_super($attributes, $content = null)
+  {
+    // Parse shortcode attributes
+    $default_attributes = array('show_title' => false);
+    $attributes = shortcode_atts($default_attributes, $attributes);
+
+    // Retrieve possible errors from request parameters
+    $attributes['errors'] = array();
+    if (isset($_REQUEST['register-errors'])) {
+      $error_codes = explode(',', $_REQUEST['register-errors']);
+
+      foreach ($error_codes as $error_code) {
+        $attributes['errors'][] = $this->get_error_message($error_code);
+      }
+    }
+
+    if(isset($_REQUEST['form-data'])) {
+      $attributes['form-data'] = $_REQUEST['form-data'];
+    }
+    
+    // Check if the user just registered
+    if(isset($_REQUEST['registered'])) {
+      $attributes['registered'] = $_REQUEST['registered'];
+    }
+
+    if(!is_user_logged_in()) {
+      wp_redirect(home_url());
+    } else {
+      return $this->get_template_html('register_form_super', $attributes);
+    }
+  }
+
+  /**
    * Redirects the user to the custom registration page instead
    * of wp-login.php?action=register.
    */
@@ -360,7 +406,7 @@ class Xinc_Login_Plugin
    *
    * @return int|WP_Error         The id of the user that was created, or error if failed.
    */
-  private function register_user($email, $first_name, $last_name, $phone_number)
+  private function register_user($email, $first_name, $last_name)
   {
     $errors = new WP_Error();
  
@@ -391,6 +437,11 @@ class Xinc_Login_Plugin
     );
 
     $user_id = wp_insert_user($user_data);
+
+    if(is_user_logged_in()) {
+      update_user_meta( $user_id, 'parent_id', get_current_user_id());
+    }
+
     wp_new_user_notification($user_id, null, 'user');
 
     return $user_id;
@@ -405,12 +456,12 @@ class Xinc_Login_Plugin
   public function do_register_user()
   {
     if ('POST' == $_SERVER['REQUEST_METHOD']) {
-      $redirect_url = home_url('member-register');
+      $redirect_url = $_POST['source_url'];
 
       if (!get_option('users_can_register')) {
             // Registration closed, display error
         $redirect_url = add_query_arg('register-errors', 'closed', $redirect_url);
-      } elseif (!$this->verify_recaptcha()) {
+      } elseif (!$this->verify_recaptcha() && $_POST['recaptcha_required'] === 'true') {
         // Recaptcha check failed, display error
         $redirect_url = add_query_arg('register-errors', 'captcha', $redirect_url);
       } else {
@@ -418,7 +469,7 @@ class Xinc_Login_Plugin
         $first_name = sanitize_text_field($_POST['first_name']);
         $last_name = sanitize_text_field($_POST['last_name']);
 
-        $result = $this->register_user($email, $first_name, $last_name, $phone_number);
+        $result = $this->register_user($email, $first_name, $last_name);
 
         if (is_wp_error($result)) {
           $form_data = array(
@@ -431,7 +482,6 @@ class Xinc_Login_Plugin
           $redirect_url = add_query_arg(array('register-errors' => $errors, 'form-data' => $form_data), $redirect_url);
         } else {
           // Success, redirect to login page.
-          $redirect_url = home_url('member-register');
           $redirect_url = add_query_arg('registered', $email, $redirect_url);
         }
       }
@@ -751,7 +801,7 @@ class Xinc_Login_Plugin
 
   public function do_edit_account() {
     global $post;
-    if ('POST' == $_SERVER['REQUEST_METHOD'] && $post->post_name == 'member-edit-account') {
+    if ('POST' == $_SERVER['REQUEST_METHOD'] && $post && $post->post_name == 'member-edit-account') {
 
       $data = array(
         'email' => $_POST['email'],

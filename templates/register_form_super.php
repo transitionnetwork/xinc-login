@@ -15,8 +15,7 @@
     <div class="alert alert-info">
       <?php
       printf(
-        __('Registration to <strong>%s</strong> successful. Please check your email to set your password and login.', 'xinc-login'),
-        get_bloginfo('name')
+        __('<p>Registration successful for %s.</p><p>The user will receive their login information in their email inbox. You may now <a href="%s">assign an initiative</a> to this user.</p>', 'xinc-login'), $attributes['registered'], home_url()
       );
       ?>
     </div>
@@ -42,14 +41,8 @@
           <input type="text" name="email" id="email" value="<?php echo $form_data['email'] ?? ''; ?>">
       </p>
 
-      <?php if ($attributes['recaptcha_site_key']) : ?>
-        <div class="recaptcha-container">
-          <div class="g-recaptcha" data-sitekey="<?php echo $attributes['recaptcha_site_key']; ?>"></div>
-        </div>
-      <?php endif; ?>
-
       <p class="signup-submit">
-        <input type="hidden" name="recaptcha_required" value="true">
+        <input type="hidden" name="recaptcha_required" value="false">
         <input type="hidden" name="source_url" value="<?php echo get_the_permalink(); ?>">
         <input type="submit" name="submit" class="register-button" value="<?php _e('Register', 'xinc-login'); ?>"/>
       </p>

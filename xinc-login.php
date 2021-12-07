@@ -732,9 +732,16 @@ class Xinc_Login_Plugin
           exit;
         }
  
-            // Parameter checks OK, reset password
+        // Parameter checks OK, reset password
         reset_password($user, $_POST['pass1']);
-        wp_redirect(home_url('member-login?password=changed'));
+
+        $user_info = get_userdata($user);
+        $credentials = array(
+          'user_login' => $rp_login,
+          'user_password' => $_POST['pass1']
+        );
+        wp_signon( $credentials);
+        wp_redirect(home_url());
       } else {
         echo "Invalid request.";
       }

@@ -249,7 +249,8 @@ class Xinc_Login_Plugin
       return $redirect_url;
     }
 
-    update_user_meta($user->ID, 'last_logged_in', date('Y-m-d H:i:s'));
+    // this is now handled with a hook in the theme
+    // update_user_meta($user->ID, 'last_logged_in', date('Y-m-d H:i:s'));
 
     if (user_can($user, 'manage_options')) {
       // Use the redirect_to parameter if one is set, otherwise redirect to admin dashboard.

@@ -274,10 +274,6 @@ class Xinc_Login_Plugin
       $redirect_url = home_url('gdpr-terms-and-conditions');
     }
 
-    var_dump(get_user_meta($user->ID, 'gdpr_accepted', true));
-    var_dump($user_roles);
-    dd($redirect_url);
-
     // last logged in is now handled with a hook in the theme
     // update_user_meta($user->ID, 'last_logged_in', date('Y-m-d H:i:s'));
 

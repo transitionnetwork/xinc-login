@@ -192,11 +192,15 @@ class Xinc_Login_Plugin
   private function redirect_logged_in_user($redirect_to = null)
   {
     $user = wp_get_current_user();
+    var_dump($user);
+    die();
 
     if (user_can($user, 'manage_options')) {
       if ($redirect_to) {
         wp_safe_redirect($redirect_to);
       } else {
+        var_dump('i am admin');
+        die();
         wp_redirect(admin_url());
       }
     } else {
@@ -249,24 +253,33 @@ class Xinc_Login_Plugin
       return $redirect_url;
     }
 
-    // this is now handled with a hook in the theme
-    // update_user_meta($user->ID, 'last_logged_in', date('Y-m-d H:i:s'));
+    $user_roles = $user->roles;
 
-    if (user_can($user, 'manage_options')) {
-      // Use the redirect_to parameter if one is set, otherwise redirect to admin dashboard.
-      if ($requested_redirect_to == '') {
-        $redirect_url = admin_url();
-      } else {
+    if(get_user_meta($user->ID, 'gdpr_accepted', true)) {
+      // Non-admin users always go to their account page after login
+      if($requested_redirect_to !== '') {
         $redirect_url = $requested_redirect_to;
+      } else {
+        if(in_array('administrator', $user_roles)) {
+          $redirect_url = admin_url();
+        } elseif (in_array('hub', $user_roles)) {
+          $redirect_url = home_url('account#nav-initiative-admin');
+        } elseif (in_array('super_hub', $user_roles)) {
+          $redirect_url = home_url('account#nav-initiative-admin');
+        } else {
+          $redirect_url = home_url('account');
+        }
       }
     } else {
-      if(get_user_meta($user->ID, 'gdpr_accepted')) {
-        // Non-admin users always go to their account page after login
-        $redirect_url = home_url('account');
-      } else {
-        $redirect_url = home_url('gdpr-terms-and-conditions');
-      }
+      $redirect_url = home_url('gdpr-terms-and-conditions');
     }
+
+    var_dump(get_user_meta($user->ID, 'gdpr_accepted', true));
+    var_dump($user_roles);
+    dd($redirect_url);
+
+    // last logged in is now handled with a hook in the theme
+    // update_user_meta($user->ID, 'last_logged_in', date('Y-m-d H:i:s'));
 
     return wp_validate_redirect($redirect_url, home_url());
   }

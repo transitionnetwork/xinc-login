@@ -42,7 +42,7 @@
   );
   ?>
     
-  <a href="<?php echo get_the_permalink(460); ?>">
+  <a href="<?php echo wp_lostpassword_url(); ?>">
       <p><?php _e('Register a new account', 'xinc-login'); ?></p>
   </a>
   
